@@ -2,3 +2,4 @@ include:
   - caddy/docker-compose.yaml
   - keycloak/docker-compose.yaml
   - linkwarden/docker-compose.yaml
+  - nextcloud/docker-compose.yaml

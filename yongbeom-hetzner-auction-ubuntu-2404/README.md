@@ -19,7 +19,8 @@ This is a hardened OpenSSH server config. It:
 | Service         | Port | Subdomain          |
 | --------------- | ---- | ------------------ |
 | Keycloak (Auth) | 2404 | auth.yongbeom.net  |
-| Linkwarden      | 2405 | links.yongbeom.net |
+| Linkwarden      | 2405 | links.yongbeom.net  |
+| Nextcloud AIO   | 2406 | -                  |
 
 ### KeyCloak
 

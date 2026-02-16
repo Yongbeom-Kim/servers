@@ -3,6 +3,7 @@
 SERVER_USER = server
 DIR ?= /home/$(SERVER_USER)
 SCP_DIR = /home/$(SERVER_USER)/setup
+SSH_SERVER_FORWARD ?= -L 8080:localhost:8080
 
 REMOTE_HOSTNAME=yongbeom-hetzner-auction-ubuntu-2404
 
@@ -20,7 +21,7 @@ ssh_root: ## SSH as 'root' user
 	ssh root@$${IPV4_ADDRESS}
 
 ssh_server: ## SSH as 'server' user
-	$(SOURCE_ENV) && ssh -ttt $(SERVER_USER)@$${IPV4_ADDRESS} 'cd $(DIR) && exec $$SHELL'
+	$(SOURCE_ENV) && ssh -ttt $(SSH_SERVER_FORWARD) $(SERVER_USER)@$${IPV4_ADDRESS} 'cd $(DIR) && exec $$SHELL'
 
 ##@ SCP
 rsync: ## Sync this directory to server
