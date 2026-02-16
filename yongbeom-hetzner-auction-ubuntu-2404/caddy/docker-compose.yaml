@@ -16,6 +16,8 @@ services:
       - NEXTCLOUD_PORT=${NEXTCLOUD_PORT:?NEXTCLOUD_PORT is not set}
       - VAULTWARDEN_HOSTNAME=${VAULTWARDEN_HOSTNAME:?VAULTWARDEN_HOSTNAME is not set}
       - VAULTWARDEN_PORT=${VAULTWARDEN_PORT:?VAULTWARDEN_PORT is not set}
+      - OPENBAO_HOSTNAME=${OPENBAO_HOSTNAME:?OPENBAO_HOSTNAME is not set}
+      - OPENBAO_PORT=${OPENBAO_PORT:?OPENBAO_PORT is not set}
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/data:/data
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/config:/config

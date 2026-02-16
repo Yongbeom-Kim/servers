@@ -1,0 +1,39 @@
+services:
+  openbao-server:
+    profiles: ["openbao", "all"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["server"]
+    environment:
+      VAULT_UI: true
+      VAULT_API_ADDR: https://${OPENBAO_HOSTNAME:?OPENBAO_HOSTNAME not set}
+      VAULT_CLUSTER_ADDR: http://openbao-server:8201
+      VAULT_RAFT_PATH: /openbao/raft
+      VAULT_RAFT_NODE_ID: node_1
+    volumes:
+      - "openbao_raft:/openbao/raft"
+      - "openbao_logs:/openbao/logs"
+      - "openbao_file:/openbao/file"
+    ports:
+      - "${OPENBAO_PORT:?OPENBAO_PORT is not set}:8200"
+
+volumes:
+  openbao_raft:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/openbao/raft"
+  openbao_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/openbao/logs"
+  openbao_file:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/openbao/file"

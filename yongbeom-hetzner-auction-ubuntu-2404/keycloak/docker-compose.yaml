@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: ${KC_DB_NAME:?KC_DB_NAME is not set}
       POSTGRES_USER: ${KC_DB_USERNAME:?KC_DB_USERNAME is not set}
-    POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is not set}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is not set}
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/keycloak/postgresql/data:/var/lib/postgresql/data
 

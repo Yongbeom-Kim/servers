@@ -14,3 +14,7 @@
 {$VAULTWARDEN_HOSTNAME} {
 	reverse_proxy localhost:{$VAULTWARDEN_PORT}
 }
+
+{$OPENBAO_HOSTNAME} {
+	reverse_proxy localhost:{$OPENBAO_PORT}
+}

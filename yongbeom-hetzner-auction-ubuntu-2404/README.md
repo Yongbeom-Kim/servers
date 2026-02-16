@@ -22,6 +22,7 @@ This is a hardened OpenSSH server config. It:
 | Linkwarden      | 2405 | links.yongbeom.net |
 | Nextcloud AIO   | 2406 | drive.yongbeom.net |
 | Vaultwarden     | 2407 | pw.yongbeom.net    |
+| OpenBao         | 2408 | bao.yongbeom.net   |
 
 ### KeyCloak
 

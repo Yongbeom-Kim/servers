@@ -3,7 +3,7 @@
 SERVER_USER = server
 DIR ?= /home/$(SERVER_USER)
 SCP_DIR = /home/$(SERVER_USER)/setup
-SSH_SERVER_FORWARD ?= -L 8080:localhost:8080
+SSH_SERVER_FORWARD ?= -L 8080:localhost:8080 -L 2408:localhost:2408
 
 REMOTE_HOSTNAME=yongbeom-hetzner-auction-ubuntu-2404
 
@@ -49,13 +49,15 @@ _remote_exec_with_env_impl:
 start_detached: ## Start services detached (only run this on the server!!!)
 	DETACHED=1 $(MAKE) start
 
+PROFILE ?= all
+
 remote_start: ## Start all services on remote server (detached)
 	$(MAKE) rsync
-	DETACHED=1 CMD="docker compose --profile all up -d --build" $(MAKE) _remote_exec_with_env_impl
+	DETACHED=1 CMD="docker compose --profile $(PROFILE) up -d --build" $(MAKE) _remote_exec_with_env_impl
 
 remote_stop: ## Stop services on remote server
 	$(MAKE) rsync
-	DETACHED=0 CMD="docker compose --profile all down" $(MAKE) _remote_exec_with_env_impl
+	DETACHED=0 CMD="docker compose --profile $(PROFILE) down" $(MAKE) _remote_exec_with_env_impl
 
 remote_logs: ## Show logs from all services on remote server
-	DETACHED=0 CMD="docker compose --profile all logs -f" $(MAKE) _remote_exec_with_env_impl
+	DETACHED=0 CMD="docker compose --profile $(PROFILE) logs -f" $(MAKE) _remote_exec_with_env_impl
