@@ -3,3 +3,4 @@ include:
   - keycloak/docker-compose.yaml
   - linkwarden/docker-compose.yaml
   - nextcloud/docker-compose.yaml
+  - vaultwarden/docker-compose.yaml

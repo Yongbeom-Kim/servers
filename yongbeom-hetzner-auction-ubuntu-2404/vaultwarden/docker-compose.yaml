@@ -1,0 +1,9 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    ports:
+      - "${VAULTWARDEN_PORT:?VAULTWARDEN_PORT is not set}:80"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data

@@ -9,10 +9,10 @@ variable "public_ipv6" {
 }
 
 module "aws-dns" {
-  source            = "./aws-dns-record"
-  hosted_zone_name  = "yongbeom.net"
-  for_each          = toset(["auth.yongbeom.net", "links.yongbeom.net", "drive.yongbeom.net"])
-  domain            = each.value
-  public_ipv4       = var.public_ipv4
-  public_ipv6       = var.public_ipv6
+  source           = "./aws-dns-record"
+  hosted_zone_name = "yongbeom.net"
+  for_each         = toset(["auth.yongbeom.net", "links.yongbeom.net", "drive.yongbeom.net", "pw.yongbeom.net"])
+  domain           = each.value
+  public_ipv4      = var.public_ipv4
+  public_ipv6      = var.public_ipv6
 }

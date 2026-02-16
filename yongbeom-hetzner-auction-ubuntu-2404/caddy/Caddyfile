@@ -10,3 +10,7 @@
 	header Strict-Transport-Security max-age=31536000;
 	reverse_proxy localhost:{$NEXTCLOUD_PORT}
 }
+
+{$VAULTWARDEN_HOSTNAME} {
+	reverse_proxy localhost:{$VAULTWARDEN_PORT}
+}
