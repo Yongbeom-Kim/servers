@@ -1,6 +1,6 @@
 services:
   caddy:
-    profiles: ["caddy"]
+    profiles: ["caddy", "all"]
     build:
       context: .
       dockerfile: Dockerfile

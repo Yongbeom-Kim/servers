@@ -37,7 +37,7 @@ This is a hardened OpenSSH server config. It:
    - Implicit flow: **OFF**
    - Direct access grants: **OFF**
    - Service accounts roles: **OFF**
-   - Valid Redirect URIs: **`https://links.yongbeom.net/api/auth/callback/keycloak`**
+   - Valid Redirect URIs: **`https://links.yongbeom.net/api/v1/auth/callback/keycloak`**
    - Web Origins: **`https://links.yongbeom.net`**
 3. Get Client Secret
    - In `Clients → linkwarden → Credentials` paste client secret into `.env`

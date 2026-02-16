@@ -1,21 +1,20 @@
 services:
   keycloak_postgres:
-    profiles: ["keycloak"]
+    profiles: ["keycloak", "all"]
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${KC_DB_NAME:?KC_DB_NAME is not set}
       POSTGRES_USER: ${KC_DB_USERNAME:?KC_DB_USERNAME is not set}
-      POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is not set}
+    POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is not set}
     volumes:
-      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/keycloak/postgresql:/var/lib/postgresql
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/keycloak/postgresql/data:/var/lib/postgresql/data
 
   keycloak_server:
-    profiles: ["keycloak"]
+    profiles: ["keycloak", "all"]
     image: quay.io/keycloak/keycloak:26.5.3
     command:
       - start
-      - --import-realm
     environment:
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
@@ -34,6 +33,7 @@ services:
     depends_on:
       keycloak_postgres:
         condition: service_started
+    # for --import-realm
     # volumes:
     #   - ./keycloak:/opt/keycloak/data/import:ro
     ports:

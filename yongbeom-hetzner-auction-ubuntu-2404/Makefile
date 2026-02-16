@@ -49,13 +49,13 @@ _remote_exec_with_env_impl:
 start_detached: ## Start services detached (only run this on the server!!!)
 	DETACHED=1 $(MAKE) start
 
-remote_start: ## Start services on remote server (detached)
+remote_start: ## Start all services on remote server (detached)
 	$(MAKE) rsync
-	DETACHED=1 CMD="docker compose up -d --build" $(MAKE) _remote_exec_with_env_impl
+	DETACHED=1 CMD="docker compose --profile all up -d --build" $(MAKE) _remote_exec_with_env_impl
 
 remote_stop: ## Stop services on remote server
 	$(MAKE) rsync
-	DETACHED=0 CMD="docker compose down" $(MAKE) _remote_exec_with_env_impl
+	DETACHED=0 CMD="docker compose --profile all down" $(MAKE) _remote_exec_with_env_impl
 
 remote_logs: ## Show logs from all services on remote server
-	DETACHED=0 CMD="docker compose logs -f" $(MAKE) _remote_exec_with_env_impl
+	DETACHED=0 CMD="docker compose --profile all logs -f" $(MAKE) _remote_exec_with_env_impl
