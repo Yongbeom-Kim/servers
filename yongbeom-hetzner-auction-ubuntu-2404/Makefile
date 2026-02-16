@@ -24,6 +24,9 @@ ssh_server: ## SSH as 'server' user
 	$(SOURCE_ENV) && ssh -ttt $(SSH_SERVER_FORWARD) $(SERVER_USER)@$${IPV4_ADDRESS} 'cd $(DIR) && exec $$SHELL'
 
 ##@ SCP
+_rsync_with_env:
+	$(SOURCE_ENV) && rsync -az --delete --progress --exclude '.git' --exclude 'tofu-infra' . $(SERVER_USER)@$${IPV4_ADDRESS}:$(SCP_DIR)
+
 rsync: ## Sync this directory to server
 	$(SOURCE_ENV) && rsync -az --delete --progress --exclude '.git' --exclude '.env' --exclude 'tofu-infra' . $(SERVER_USER)@$${IPV4_ADDRESS}:$(SCP_DIR)
 

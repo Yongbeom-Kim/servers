@@ -1,5 +1,6 @@
 services:
   keycloak_postgres:
+    profiles: ["keycloak"]
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -10,6 +11,7 @@ services:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/keycloak/postgresql:/var/lib/postgresql
 
   keycloak_server:
+    profiles: ["keycloak"]
     image: quay.io/keycloak/keycloak:26.5.3
     command:
       - start

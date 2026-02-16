@@ -1,5 +1,6 @@
 services:
   nextcloud_aio_mastercontainer:
+    profiles: ["nextcloud"]
     image: ghcr.io/nextcloud-releases/all-in-one:latest
     container_name: nextcloud-aio-mastercontainer
     init: true

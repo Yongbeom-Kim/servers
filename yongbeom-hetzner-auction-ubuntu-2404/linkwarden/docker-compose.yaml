@@ -1,5 +1,6 @@
 services:
   linkwarden_postgres:
+    profiles: ["linkwarden"]
     image: postgres:16-alpine
     restart: always
     environment:
@@ -12,6 +13,7 @@ services:
       timeout: 5s
       retries: 5
   linkwarden_server:
+    profiles: ["linkwarden"]
     environment:
       - DATABASE_URL=postgresql://postgres:${LINKWARDEN_POSTGRES_PASSWORD}@linkwarden_postgres:5432/postgres
       - NEXTAUTH_URL=${LINKWARDEN_NEXTAUTH_URL:?LINKWARDEN_NEXTAUTH_URL is not set}
@@ -35,6 +37,7 @@ services:
       linkwarden_meilisearch:
         condition: service_started
   linkwarden_meilisearch:
+    profiles: ["linkwarden"]
     image: getmeili/meilisearch:v1.12.8
     restart: always
     volumes:
