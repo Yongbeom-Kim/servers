@@ -1,0 +1,14 @@
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: caddy
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      - KC_HOSTNAME=${KC_HOSTNAME:?KC_HOSTNAME is not set}
+      - KC_HTTP_PORT=${KC_HTTP_PORT:?KC_HTTP_PORT is not set}
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/data:/data
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/config:/config

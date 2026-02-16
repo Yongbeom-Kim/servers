@@ -2,7 +2,7 @@
 
 Config and helpers for a Hetzner auction server running Ubuntu 24.04.
 
-## Steps in Setting up
+## Set Up
 
 ### 1. SSH config: [`/etc/ssh/sshd_config`](./etc/ssh/sshd_config)
 
@@ -13,3 +13,11 @@ This is a hardened OpenSSH server config. It:
 - **Restricts login to one user:** `AllowUsers server` (only `server` can SSH)
 - **Keeps PAM** for account/session handling
 - **Disables X11 forwarding**
+
+## Services
+
+| Service         | Port | Subdomain         |
+| --------------- | ---- | ----------------- |
+| Keycloak (Auth) | 2404 | auth.yongbeom.net |
+
+### KeyCloak

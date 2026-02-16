@@ -1,0 +1,3 @@
+include:
+  - caddy/docker-compose.yaml
+  - keycloak/docker-compose.yaml

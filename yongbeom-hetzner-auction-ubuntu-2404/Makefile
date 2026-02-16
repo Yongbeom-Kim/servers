@@ -1,10 +1,12 @@
-IVP4_ADDRESS = 94.130.201.117
-IPV6_ADDRESS = 2a01:4f8:13b:22cb:0000:0000:0000:0000
+.PHONY: help ssh_root ssh_server rsync _rsync_with_env rsync_watch rsync_ssh start stop start_detached start_remote start_remote_attached stop_remote _remote_exec_with_env_impl
 
-SOURCE_ENV = set -a && . ./.env && set +a
 SERVER_USER = server
 DIR ?= /home/$(SERVER_USER)
 SCP_DIR = /home/$(SERVER_USER)/setup
+
+REMOTE_HOSTNAME=yongbeom-hetzner-auction-ubuntu-2404
+
+SOURCE_ENV = . ./source.sh
 
 ##@ Utility
 help:  ## Display this help
@@ -12,21 +14,41 @@ help:  ## Display this help
 
 ##@ SSH
 ssh_root: ## SSH as 'root' user
-	$(SOURCE_ENV) && ssh root@$(IVP4_ADDRESS)
+	ssh root@$${IPV4_ADDRESS}
 
 ssh_server: ## SSH as 'server' user
-	$(SOURCE_ENV) && ssh -ttt $(SERVER_USER)@$(IVP4_ADDRESS) 'cd $(DIR) && exec $$SHELL'
+	$(SOURCE_ENV) && ssh -ttt $(SERVER_USER)@$${IPV4_ADDRESS} 'cd $(DIR) && exec $$SHELL'
 
 ##@ SCP
-rsync:
-	@$(SOURCE_ENV) && rsync -az --delete --exclude '.git' . $(SERVER_USER)@$(IVP4_ADDRESS):$(SCP_DIR)
+rsync: ## Sync this directory to server
+	$(SOURCE_ENV) && rsync -az --delete --progress --exclude '.git' --exclude '.env' --exclude 'tofu-infra' . $(SERVER_USER)@$${IPV4_ADDRESS}:$(SCP_DIR)
 
-rsync_watch:
-	@inotifywait -mrq -e modify,create,delete,move . | \
-	while read; do \
-		$(MAKE) rsync; \
-	done
+##@ Deployment
+ifeq "$(DETACHED)" "1"
+COMPOSE_DETACHED_FLAG = -d
+SSH_TTY_FLAG = -T
+else
+COMPOSE_DETACHED_FLAG =
+SSH_TTY_FLAG = -ttt
+endif
 
-rsync_ssh:
+_remote_exec_with_env_impl:
+	$(SOURCE_ENV) && ssh $(SSH_TTY_FLAG) $(SERVER_USER)@$${IPV4_ADDRESS} ' \
+		cd "$(SCP_DIR)" && \
+		set -a && . /dev/stdin && set +a && \
+		$(CMD) \
+	' < .env
+
+start_detached: ## Start services detached (only run this on the server!!!)
+	DETACHED=1 $(MAKE) start
+
+remote_start: ## Start services on remote server (detached)
 	$(MAKE) rsync
-	DIR=$(SCP_DIR) $(MAKE) ssh_server
+	DETACHED=1 CMD="docker compose up -d --build" $(MAKE) _remote_exec_with_env_impl
+
+remote_stop: ## Stop services on remote server
+	$(MAKE) rsync
+	DETACHED=0 CMD="docker compose down" $(MAKE) _remote_exec_with_env_impl
+
+remote_logs: ## Show logs from all services on remote server
+	DETACHED=0 CMD="docker compose logs -f" $(MAKE) _remote_exec_with_env_impl
