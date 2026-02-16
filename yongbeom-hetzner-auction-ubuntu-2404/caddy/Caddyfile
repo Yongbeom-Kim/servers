@@ -18,3 +18,7 @@
 {$OPENBAO_HOSTNAME} {
 	reverse_proxy localhost:{$OPENBAO_PORT}
 }
+
+{$IMMICH_HOSTNAME} {
+	reverse_proxy localhost:{$IMMICH_PORT}
+}

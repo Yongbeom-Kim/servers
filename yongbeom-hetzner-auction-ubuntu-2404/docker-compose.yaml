@@ -5,3 +5,4 @@ include:
   - nextcloud/docker-compose.yaml
   - vaultwarden/docker-compose.yaml
   - openbao/docker-compose.yaml
+  - immich/docker-compose.yaml

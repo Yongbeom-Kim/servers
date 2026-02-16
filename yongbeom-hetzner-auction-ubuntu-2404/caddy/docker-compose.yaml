@@ -18,6 +18,8 @@ services:
       - VAULTWARDEN_PORT=${VAULTWARDEN_PORT:?VAULTWARDEN_PORT is not set}
       - OPENBAO_HOSTNAME=${OPENBAO_HOSTNAME:?OPENBAO_HOSTNAME is not set}
       - OPENBAO_PORT=${OPENBAO_PORT:?OPENBAO_PORT is not set}
+      - IMMICH_HOSTNAME=${IMMICH_HOSTNAME:?IMMICH_HOSTNAME is not set}
+      - IMMICH_PORT=${IMMICH_PORT:?IMMICH_PORT is not set}
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/data:/data
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/config:/config
