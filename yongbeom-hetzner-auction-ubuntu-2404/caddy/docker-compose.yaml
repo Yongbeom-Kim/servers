@@ -9,6 +9,8 @@ services:
     environment:
       - KC_HOSTNAME=${KC_HOSTNAME:?KC_HOSTNAME is not set}
       - KC_HTTP_PORT=${KC_HTTP_PORT:?KC_HTTP_PORT is not set}
+      - LINKWARDEN_HOSTNAME=${LINKWARDEN_HOSTNAME:?LINKWARDEN_HOSTNAME is not set}
+      - LINKWARDEN_PORT=${LINKWARDEN_PORT:?LINKWARDEN_PORT is not set}
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/data:/data
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/caddy/config:/config

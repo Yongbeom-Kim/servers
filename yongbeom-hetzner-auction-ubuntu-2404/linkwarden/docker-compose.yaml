@@ -1,0 +1,41 @@
+services:
+  linkwarden_postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=${LINKWARDEN_POSTGRES_PASSWORD:?LINKWARDEN_POSTGRES_PASSWORD not set}
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/linkwarden/postgresql:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 5s
+      retries: 5
+  linkwarden_server:
+    environment:
+      - DATABASE_URL=postgresql://postgres:${LINKWARDEN_POSTGRES_PASSWORD}@linkwarden_postgres:5432/postgres
+      - NEXTAUTH_URL=${LINKWARDEN_NEXTAUTH_URL:?LINKWARDEN_NEXTAUTH_URL is not set}
+      - NEXTAUTH_SECRET=${LINKWARDEN_NEXTAUTH_SECRET:?LINKWARDEN_NEXTAUTH_SECRET is not set}
+      - NEXT_PUBLIC_KEYCLOAK_ENABLED=${LINKWARDEN_NEXT_PUBLIC_KEYCLOAK_ENABLED:?LINKWARDEN_NEXT_PUBLIC_KEYCLOAK_ENABLED is not set}
+      - NEXT_PUBLIC_DISABLE_REGISTRATION=${LINKWARDEN_NEXT_PUBLIC_DISABLE_REGISTRATION:?LINKWARDEN_NEXT_PUBLIC_DISABLE_REGISTRATION is not set}
+      - KEYCLOAK_CUSTOM_NAME=${LINKWARDEN_KEYCLOAK_CUSTOM_NAME:?LINKWARDEN_KEYCLOAK_CUSTOM_NAME is not set}
+      - KEYCLOAK_ISSUER=${LINKWARDEN_KEYCLOAK_ISSUER:?LINKWARDEN_KEYCLOAK_ISSUER is not set}
+      - KEYCLOAK_CLIENT_ID=${LINKWARDEN_KEYCLOAK_CLIENT_ID:?LINKWARDEN_KEYCLOAK_CLIENT_ID is not set}
+      - KEYCLOAK_CLIENT_SECRET=${LINKWARDEN_KEYCLOAK_CLIENT_SECRET:?LINKWARDEN_KEYCLOAK_CLIENT_SECRET is not set}
+    restart: always
+    # build: . # uncomment to build from source
+    image: ghcr.io/linkwarden/linkwarden:latest # comment to build from source
+    ports:
+      - ${LINKWARDEN_PORT:?LINKWARDEN_PORT is not set}:3000
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/linkwarden/data:/data/data
+    depends_on:
+      linkwarden_postgres:
+        condition: service_healthy
+      linkwarden_meilisearch:
+        condition: service_started
+  linkwarden_meilisearch:
+    image: getmeili/meilisearch:v1.12.8
+    restart: always
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/linkwarden/meili_data:/meili_data
