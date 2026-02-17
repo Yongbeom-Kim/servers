@@ -37,6 +37,16 @@ Timing is configured per project in `backup/crontab`.
 
 - Nextcloud: confirm and adopt the official Nextcloud AIO-recommended backup/restore solution instead of restic sidecar file backup.
 
+### Service test checklist (excluding Caddy)
+
+- [ ] immich: run `docker compose --profile immich up -d backup` and verify backup + `pg_dump` completes.
+- [ ] keycloak: run `docker compose --profile keycloak up -d backup` and verify backup + `pg_dump` completes.
+- [ ] linkwarden: run `docker compose --profile linkwarden up -d backup` and verify backup + `pg_dump` completes.
+- [ ] offline-notion: run `docker compose up -d backup` and verify file backup completes.
+- [ ] openbao: run `docker compose --profile openbao up -d backup` and verify file backup completes.
+- [ ] vaultwarden: run `docker compose --profile vaultwarden up -d backup` and verify file backup completes.
+- [ ] nextcloud: validate and document the official Nextcloud AIO backup/restore approach (no restic sidecar currently configured).
+
 ## Data selection rules
 
 - Bind-mounted app data is mounted read-only under `/data/<service>/<mount_name>`.
