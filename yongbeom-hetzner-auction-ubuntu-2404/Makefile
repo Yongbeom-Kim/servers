@@ -3,7 +3,7 @@
 SERVER_USER = server
 DIR ?= /home/$(SERVER_USER)
 SCP_DIR = /home/$(SERVER_USER)/setup
-SSH_SERVER_FORWARD ?= -L 8080:localhost:8080 -L 2408:localhost:2408
+SSH_SERVER_FORWARD ?= -L 8080:localhost:8080 -L 2408:localhost:2408 -L 3404:localhost:3404
 
 REMOTE_HOSTNAME=yongbeom-hetzner-auction-ubuntu-2404
 

@@ -17,7 +17,9 @@ module "aws-dns" {
     "drive.yongbeom.net",
     "pw.yongbeom.net",
     "bao.yongbeom.net",
-    "photos.yongbeom.net"
+    "photos.yongbeom.net",
+    "notion.yongbeom.net",
+    "v1.notion.yongbeom.net",
   ])
   domain           = each.value
   public_ipv4      = var.public_ipv4

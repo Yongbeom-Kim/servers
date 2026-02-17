@@ -16,6 +16,8 @@ This is a hardened OpenSSH server config. It:
 
 ## Services
 
+### From the Internet
+
 | Service         | Port | Subdomain          |
 | --------------- | ---- | ------------------ |
 | Keycloak (Auth) | 2404 | auth.yongbeom.net  |
@@ -23,6 +25,12 @@ This is a hardened OpenSSH server config. It:
 | Nextcloud AIO   | 2406 | drive.yongbeom.net |
 | Vaultwarden     | 2407 | pw.yongbeom.net    |
 | OpenBao         | 2408 | bao.yongbeom.net   |
+
+### Mine
+
+| Service                                                                 | Port | Subdomain           |
+| ----------------------------------------------------------------------- | ---- | ------------------- |
+| [Offline Notion](https://github.com/Yongbeom-Kim/offline-notion) (TODO) | 3404 | notion.yongbeom.net |
 
 ### KeyCloak
 

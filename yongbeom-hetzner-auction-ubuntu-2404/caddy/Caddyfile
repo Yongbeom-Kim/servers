@@ -22,3 +22,11 @@
 {$IMMICH_HOSTNAME} {
 	reverse_proxy localhost:{$IMMICH_PORT}
 }
+
+{$OFFLINE_NOTION_HOSTNAME} {
+	reverse_proxy localhost:{$OFFLINE_NOTION_PORT}
+}
+
+{$OFFLINE_NOTION_V1_HOSTNAME} {
+	reverse_proxy localhost:{$OFFLINE_NOTION_PORT}
+}
