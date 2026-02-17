@@ -10,3 +10,21 @@ services:
       - "${VAULTWARDEN_PORT:?VAULTWARDEN_PORT is not set}:80"
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data
+
+  backup:
+    profiles: ["vaultwarden", "all"]
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "vaultwarden"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data/vaultwarden/data:ro

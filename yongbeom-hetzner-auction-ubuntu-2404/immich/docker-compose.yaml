@@ -81,5 +81,30 @@ services:
     healthcheck:
       disable: false
 
+  backup:
+    profiles: ["immich", "all"]
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      PGHOST: database
+      PGPORT: "5432"
+      PGDATABASE: ${IMMICH_DB_DATABASE_NAME}
+      PGUSER: ${IMMICH_DB_USERNAME}
+      PGPASSWORD: ${IMMICH_DB_PASSWORD}
+    depends_on:
+      - database
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "immich"
+    volumes:
+      - ${VOLUME_BASE_DIR?:}/immich/data:/data/immich-server/data:ro
+
 volumes:
   model-cache:

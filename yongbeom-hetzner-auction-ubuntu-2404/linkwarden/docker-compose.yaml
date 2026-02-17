@@ -42,3 +42,29 @@ services:
     restart: always
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/linkwarden/meili_data:/meili_data
+
+  backup:
+    profiles: ["linkwarden", "all"]
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      PGHOST: linkwarden_postgres
+      PGPORT: "5432"
+      PGDATABASE: postgres
+      PGUSER: postgres
+      PGPASSWORD: ${LINKWARDEN_POSTGRES_PASSWORD}
+    depends_on:
+      - linkwarden_postgres
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "linkwarden"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/linkwarden/data:/data/linkwarden_server/data:ro
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/linkwarden/meili_data:/data/linkwarden_meilisearch/meili_data:ro

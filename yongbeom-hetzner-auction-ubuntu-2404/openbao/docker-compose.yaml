@@ -18,6 +18,26 @@ services:
     ports:
       - "${OPENBAO_PORT:?OPENBAO_PORT is not set}:8200"
 
+  backup:
+    profiles: ["openbao", "all"]
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "openbao"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/openbao/raft:/data/openbao-server/raft:ro
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/openbao/logs:/data/openbao-server/logs:ro
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/openbao/file:/data/openbao-server/file:ro
+
 volumes:
   openbao_raft:
     driver: local
