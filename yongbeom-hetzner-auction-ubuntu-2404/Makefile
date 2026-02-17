@@ -17,8 +17,8 @@ help:  ## Display this help
 	cut -d '=' -f1 --output-delimiter='=' .env > .env.example
 
 ##@ SSH
-ssh_root: ## SSH as 'root' user
-	ssh root@$${IPV4_ADDRESS}
+# ssh_root: ## SSH as 'root' user
+# 	ssh root@$${IPV4_ADDRESS}
 
 ssh_server: ## SSH as 'server' user
 	$(SOURCE_ENV) && ssh -ttt $(SSH_SERVER_FORWARD) $(SERVER_USER)@$${IPV4_ADDRESS} 'cd $(DIR) && exec $$SHELL'
