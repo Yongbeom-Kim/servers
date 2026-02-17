@@ -18,18 +18,18 @@ This is a hardened OpenSSH server config. It:
 
 ### From the Internet
 
-| Service         | Port | Subdomain          |
-| --------------- | ---- | ------------------ |
-| Keycloak (Auth) | 2404 | [auth.yongbeom.net](https://auth.yongbeom.net)  |
+| Service         | Port | Subdomain                                        |
+| --------------- | ---- | ------------------------------------------------ |
+| Keycloak (Auth) | 2404 | [auth.yongbeom.net](https://auth.yongbeom.net)   |
 | Linkwarden      | 2405 | [links.yongbeom.net](https://links.yongbeom.net) |
 | Nextcloud AIO   | 2406 | [drive.yongbeom.net](https://drive.yongbeom.net) |
-| Vaultwarden     | 2407 | [pw.yongbeom.net](https://pw.yongbeom.net)    |
-| OpenBao         | 2408 | [bao.yongbeom.net](https://bao.yongbeom.net)   |
+| Vaultwarden     | 2407 | [pw.yongbeom.net](https://pw.yongbeom.net)       |
+| OpenBao         | 2408 | [bao.yongbeom.net](https://bao.yongbeom.net)     |
 
 ### Mine
 
-| Service                                                                 | Port | Subdomain           |
-| ----------------------------------------------------------------------- | ---- | ------------------- |
+| Service                                                                 | Port | Subdomain                                          |
+| ----------------------------------------------------------------------- | ---- | -------------------------------------------------- |
 | [Offline Notion](https://github.com/Yongbeom-Kim/offline-notion) (TODO) | 3404 | [notion.yongbeom.net](https://notion.yongbeom.net) |
 
 ### KeyCloak
