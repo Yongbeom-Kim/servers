@@ -12,7 +12,7 @@ This is a hardened OpenSSH server config. It:
 - **Key-only auth:** password and keyboard-interactive are off; only `PubkeyAuthentication` is used
 - **Restricts login to one user:** `AllowUsers server` (only `server` can SSH)
 - **Keeps PAM** for account/session handling
-- **Disables X11 forwarding**
+- **Disables X11 forwarding** because I don't need it and ChatGPT suggested it
 
 ## Services
 
