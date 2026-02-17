@@ -1,0 +1,3 @@
+[submodule "yongbeom-hetzner-auction-ubuntu-2404/offline-notion"]
+	path = yongbeom-hetzner-auction-ubuntu-2404/offline-notion
+	url = git@github.com:Yongbeom-Kim/offline-notion.git
