@@ -11,7 +11,7 @@ services:
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data
 
-  backup:
+  vaultwarden-backup:
     profiles: ["vaultwarden", "all"]
     build:
       context: ./backup
@@ -23,8 +23,20 @@ services:
       KEEP_DAILY: ${KEEP_DAILY:-7}
       KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
       KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is not set}
+      BACKUP_PATH: /data/vaultwarden
+      BACKUP_TARGET_CONTAINER: vaultwarden
+      BACKUP_ON_STARTUP: ${VAULTWARDEN_BACKUP_ON_STARTUP:-true}
+      B2_REPO: ${VAULTWARDEN_B2_REPO:?VAULTWARDEN_B2_REPO not set}
+      R2_REPO: ${VAULTWARDEN_R2_REPO:?VAULTWARDEN_R2_REPO not set}
+      B2_APPLICATION_KEY_ID: ${B2_APPLICATION_KEY_ID:?}
+      B2_APPLICATION_KEY: ${B2_APPLICATION_KEY:?}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:?}
     labels:
       com.backup.enabled: "true"
       com.backup.project: "vaultwarden"
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data/vaultwarden/data:ro
+      - /var/run/docker.sock:/var/run/docker.sock
