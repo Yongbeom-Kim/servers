@@ -74,7 +74,7 @@ module "backup_bucket" {
     "backup-links-yongbeom-net",
     # "drive.yongbeom.net", # TODO: Research NextCloud Backup
     "backup-pw-yongbeom-net",
-    "backup-bao-yongbeom-net", # TODO
+    "backup-bao-yongbeom-net",
     "backup-photos-yongbeom-net", # TODO
     # "notion.yongbeom.net", # TODO: low priority
     # "v1.notion.yongbeom.net", # TODO: low priority
