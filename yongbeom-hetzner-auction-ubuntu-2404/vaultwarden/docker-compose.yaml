@@ -10,3 +10,36 @@ services:
       - "${VAULTWARDEN_PORT:?VAULTWARDEN_PORT is not set}:80"
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data
+
+  vaultwarden-backup:
+    profiles: ["vaultwarden", "all"]
+    container_name: vaultwarden-backup
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?}
+      BACKUP_PATH: /data/vaultwarden
+      BACKUP_TARGET_CONTAINER: vaultwarden
+      BACKUP_ON_STARTUP: ${VAULTWARDEN_BACKUP_ON_STARTUP:-false}
+      B2_REPO: ${VAULTWARDEN_B2_REPO:?}
+      R2_REPO: ${VAULTWARDEN_R2_REPO:?}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:?}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:?}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:?}
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "vaultwarden"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/vaultwarden/data:/data/vaultwarden/data:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - vaultwarden

@@ -1,6 +1,7 @@
 services:
   openbao-server:
     profiles: ["openbao", "all"]
+    container_name: openbao_server
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,6 +18,44 @@ services:
       - "openbao_file:/openbao/file"
     ports:
       - "${OPENBAO_PORT:?OPENBAO_PORT is not set}:8200"
+    deploy:
+      resources:
+        limits:
+          memory: 3g
+        reservations:
+          memory: 3g
+
+  openbao-backup:
+    profiles: ["openbao", "all"]
+    container_name: openbao_backup
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_HOURLY: ${KEEP_HOURLY:-24}
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?}
+      VAULT_ADDR: http://openbao-server:8200
+      VAULT_TOKEN: ${OPENBAO_VAULT_BACKUP_TOKEN:?}
+      VAULT_TOKEN_ACCESSOR: ${OPENBAO_VAULT_BACKUP_TOKEN_ACCESSOR:?}
+      BACKUP_ON_STARTUP: ${OPENBAO_BACKUP_ON_STARTUP:-false}
+      B2_REPO: ${OPENBAO_B2_REPO:-}
+      R2_REPO: ${OPENBAO_R2_REPO:-}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:-}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:-}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-auto}
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "openbao"
+    depends_on:
+      - openbao-server
 
 volumes:
   openbao_raft:
