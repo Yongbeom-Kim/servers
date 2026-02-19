@@ -1,5 +1,8 @@
 # Architecture Diagram
 
+<img width="2089" height="2181" alt="image" src="https://github.com/user-attachments/assets/702e9cd3-1821-4a70-868e-ad10f7ed74bf" />
+
+
 ## Sources Used
 
 - `yongbeom-hetzner-auction-ubuntu-2404/tofu-infra/main.tf`
