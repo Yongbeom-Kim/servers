@@ -29,17 +29,7 @@ log() {
 KEEP_DAILY="${KEEP_DAILY:-7}"
 KEEP_WEEKLY="${KEEP_WEEKLY:-4}"
 KEEP_MONTHLY="${KEEP_MONTHLY:-12}"
-BACKUP_TARGET_CONTAINER="${BACKUP_TARGET_CONTAINER:-vaultwarden}"
-
-if [ -z "${RESTIC_PASSWORD:-}" ]; then
-  log "RESTIC_PASSWORD is required"
-  exit 1
-fi
-
-if [ -z "${BACKUP_PATH:-}" ]; then
-  log "BACKUP_PATH is required"
-  exit 1
-fi
+BACKUP_TARGET_CONTAINER="${BACKUP_TARGET_CONTAINER:?}"
 
 LOCK_DIR="/tmp/backup.lock"
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
@@ -95,8 +85,8 @@ if [ -z "${B2_REPO:-}" ] && [ -z "${R2_REPO:-}" ]; then
 fi
 
 if [ -n "${B2_REPO:-}" ]; then
-  if [ -z "${B2_APPLICATION_KEY_ID:-}" ] || [ -z "${B2_APPLICATION_KEY:-}" ]; then
-    log "B2_REPO is set but B2_APPLICATION_KEY_ID or B2_APPLICATION_KEY is missing"
+  if [ -z "${B2_ACCOUNT_ID:-}" ] || [ -z "${B2_ACCOUNT_KEY:-}" ]; then
+    log "B2_REPO is set but B2_ACCOUNT_ID or B2_ACCOUNT_KEY is missing"
     exit 1
   fi
 fi
@@ -127,8 +117,7 @@ else
 fi
 
 if [ -n "${B2_REPO:-}" ]; then
-  export B2_ACCOUNT_ID="$B2_APPLICATION_KEY_ID"
-  export B2_ACCOUNT_KEY="$B2_APPLICATION_KEY"
+  export B2_ACCOUNT_ID B2_ACCOUNT_KEY
   run_repo "B2" "$B2_REPO" "$@"
 fi
 

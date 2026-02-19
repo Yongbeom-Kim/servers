@@ -70,10 +70,10 @@ module "aws-dns" {
 module "backup_bucket" {
   source                = "./backup_bucket"
   for_each              = toset([
-    "backup-auth-yongbeom-net", # Done
-    "backup-links-yongbeom-net", # TODO
+    "backup-auth-yongbeom-net",
+    "backup-links-yongbeom-net",
     # "drive.yongbeom.net", # TODO: Research NextCloud Backup
-    "backup-pw-yongbeom-net", # TODO
+    "backup-pw-yongbeom-net",
     "backup-bao-yongbeom-net", # TODO
     "backup-photos-yongbeom-net", # TODO
     # "notion.yongbeom.net", # TODO: low priority
