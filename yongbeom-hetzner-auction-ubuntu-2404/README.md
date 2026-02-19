@@ -2,6 +2,8 @@
 
 Config and helpers for a Hetzner auction server running Ubuntu 24.04.
 
+See all the services @ [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Set Up
 
 ### 1. SSH config: [`/etc/ssh/sshd_config`](./etc/ssh/sshd_config)
