@@ -1,89 +1,116 @@
-# Backup Sidecar Standard
+# Backups Runbook (Reviewed, Excluding Git Submodules)
 
-This repository now applies a uniform `backup` service per Compose project using a restic sidecar.
+This document is the current-state backup runbook for first-party services in this repo.
+Excluded from this review by request: git submodules (including `offline-notion`).
 
-## What it does
+## Scope
 
-- Runs inside each project as service name `backup`.
-- Uses labels:
-  - `com.backup.enabled=true`
-  - `com.backup.project=<project_dir_name>`
-- Schedules backups daily via supercronic inside each backup container.
-- Sends backups to both remotes when configured:
-  - Backblaze B2 via restic `b2:` repo (`B2_REPO`).
-  - Cloudflare R2 via restic `s3:` repo (`R2_REPO` + AWS-compatible credentials).
-- Applies retention:
-  - `--keep-daily 7`
-  - `--keep-weekly 4`
-  - `--keep-monthly 12`
-- Logs to stdout/stderr.
+Services reviewed:
+- `immich`
+- `keycloak`
+- `linkwarden`
+- `openbao`
+- `vaultwarden`
 
-## Backup timing (staggered)
+Not covered by current sidecar backup:
+- `nextcloud` (uses its own lifecycle and should follow official Nextcloud AIO backup/restore guidance)
 
-Backups are intentionally staggered so postgres logical dumps do not start at the same minute.
+## Current Strategy Summary
 
-| Project | Daily time (local) | Notes |
-|---|---|---|
-| immich | 03:10 | host cron; run `immich/backup/backup.sh` with BACKUP_PATH set to host paths |
-| keycloak | 03:25 | includes `pg_dump` |
-| linkwarden | 03:40 | includes `pg_dump` |
-| offline-notion | 04:00 | file backup |
-| openbao | 04:10 | file backup |
-| vaultwarden | 04:20 | file backup |
+- Backup mechanism: per-service `backup` container running `restic` + `supercronic`.
+- Repositories: Backblaze B2 (`B2_REPO`) and Cloudflare R2 (`R2_REPO`).
+- Encryption: restic repository encryption via `RESTIC_PASSWORD`.
+- Concurrency control: local lock directory (`/tmp/backup.lock`) per backup container.
+- Retention defaults:
+  - Most services: `--keep-daily 7 --keep-weekly 4 --keep-monthly 12`
+  - OpenBao adds `--keep-hourly 24` (15-minute schedule).
+- Execution model: scheduled inside backup containers, not host cron.
 
-Timing is configured per project in `backup/crontab`.
+## Service Matrix (As Implemented)
 
-## TODO
+| Service | Schedule | Backed up data | DB approach | Downtime impact |
+|---|---|---|---|---|
+| `immich` | `03:10` daily | `/data/immich` (bind mounts include server files and raw postgres dir) | Optional `pg_dumpall` when PG env vars are set | No intentional stop/start |
+| `keycloak` | `03:25` daily | `/data` containing `pgdump.dump` | Required `pg_dump --format=custom` before restic | No intentional stop/start |
+| `linkwarden` | `03:40` daily | `/data/linkwarden` (includes app files, meilisearch data, postgres data dir) | No logical dump; file-level capture after stopping containers | Stops `linkwarden_server`, `linkwarden_meilisearch`, `linkwarden_postgres` during backup |
+| `openbao` | Every `15` minutes | Raft snapshot file (`bao operator raft snapshot save`) | Service-native raft snapshot | No app container stop, snapshot via API/token |
+| `vaultwarden` | `04:20` daily | `/data/vaultwarden` | File-level backup only | Stops `vaultwarden` during backup |
 
-- Nextcloud: confirm and adopt the official Nextcloud AIO-recommended backup/restore solution instead of restic sidecar file backup.
+References:
+- Schedules: `immich/backup/crontab`, `keycloak/backup/crontab`, `linkwarden/backup/crontab`, `openbao/backup/crontab`, `vaultwarden/backup/crontab`
+- Logic: each service `backup/backup.sh`
+- Wiring: each service `docker-compose.yaml`
 
-### Service test checklist (excluding Caddy)
+## Environment Variables (Actual Names)
 
-- [ ] immich: run `immich/backup/backup.sh` on the host (cron 03:10); set BACKUP_PATH to `${VOLUME_BASE_DIR}/immich/data` and `${IMMICH_DB_DATA_LOCATION}`.
-- [ ] keycloak: run `docker compose --profile keycloak up -d backup` and verify backup + `pg_dump` completes.
-- [ ] linkwarden: run `docker compose --profile linkwarden up -d backup` and verify backup + `pg_dump` completes.
-- [ ] offline-notion: run `docker compose up -d backup` and verify file backup completes.
-- [ ] openbao: run `docker compose --profile openbao up -d backup` and verify file backup completes.
-- [ ] vaultwarden: run `docker compose --profile vaultwarden up -d backup` and verify file backup completes.
-- [ ] nextcloud: validate and document the official Nextcloud AIO backup/restore approach (no restic sidecar currently configured).
+Global required:
+- `RESTIC_PASSWORD`
 
-## Data selection rules
+B2:
+- `B2_REPO`
+- `B2_ACCOUNT_ID`
+- `B2_ACCOUNT_KEY`
 
-- Bind-mounted app data is mounted read-only under `/data/<service>/<mount_name>`.
-- Raw postgres data directories are excluded from file-level backup.
-- If postgres is detected/configured, `backup.sh` also runs logical backup using `pg_dump` over Docker networking (`PGHOST` etc.).
-- If `BACKUP_PATHS` is unset, `backup.sh` defaults to backing up `/data`.
+R2:
+- `R2_REPO`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_DEFAULT_REGION` (usually `auto`)
 
-## Required environment variables
+Retention:
+- `KEEP_DAILY`
+- `KEEP_WEEKLY`
+- `KEEP_MONTHLY`
+- `KEEP_HOURLY` (OpenBao)
 
-- Always:
-  - `RESTIC_PASSWORD`
-- B2 target:
-  - `B2_REPO`, `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`
-- R2 target:
-  - `R2_REPO`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` (`auto` default)
-- Retention (optional overrides):
-  - `KEEP_DAILY`, `KEEP_WEEKLY`, `KEEP_MONTHLY`
-- Optional data path override:
-  - `BACKUP_PATHS` (space-separated paths)
-- Optional postgres logical backup:
-  - `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
+Service-specific examples:
+- Postgres dumps: `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
+- OpenBao snapshot auth: `VAULT_ADDR`, `VAULT_TOKEN`
 
-## Restore examples
+## Risk Review
 
-### Restore files
+1. Documentation drift existed and is now corrected here:
+- Prior doc had wrong schedule/behavior for multiple services.
+- Prior doc referenced `B2_APPLICATION_KEY_ID/B2_APPLICATION_KEY`, but scripts use `B2_ACCOUNT_ID/B2_ACCOUNT_KEY`.
+
+2. Database protection strategy is inconsistent:
+- `keycloak` uses logical dump (`pg_dump`) and is restore-friendly.
+- `immich` mixes raw postgres files and optional `pg_dumpall`.
+- `linkwarden` backs up raw postgres files without logical dump.
+
+3. Downtime tradeoff:
+- `linkwarden` and `vaultwarden` backups intentionally stop services.
+- This improves consistency for file-level snapshots but creates backup-window unavailability.
+
+4. No explicit backup health verification loop:
+- No built-in scheduled `restic check`.
+- No automated alerting on backup failure.
+
+5. Partial-failure handling differs by service:
+- `keycloak` logs repo-level failures but still reaches a success end-path, reducing signal clarity.
+
+## Restore Procedures
+
+### 1) Restore files from restic
 
 ```bash
 export RESTIC_PASSWORD='...'
-export RESTIC_REPOSITORY='b2:bucket/path'
-export B2_APPLICATION_KEY_ID='...'
-export B2_APPLICATION_KEY='...'
+export RESTIC_REPOSITORY='b2:<bucket>:<path>'  # or s3:https://<r2-endpoint>/<bucket>/<path>
+
+# For B2
+export B2_ACCOUNT_ID='...'
+export B2_ACCOUNT_KEY='...'
+
+# For R2
+export AWS_ACCESS_KEY_ID='...'
+export AWS_SECRET_ACCESS_KEY='...'
+export AWS_DEFAULT_REGION='auto'
 
 restic snapshots
 restic restore <snapshot_id> --target /tmp/restore
 ```
 
-### Restore postgres dump
+### 2) Restore Keycloak database dump (`pg_dump --format=custom`)
 
 ```bash
 pg_restore \
@@ -91,7 +118,47 @@ pg_restore \
   -p 5432 \
   -U <postgres_user> \
   -d <database_name> \
-  /tmp/restore/tmp/backup-artifacts/postgres-<db>-<timestamp>.dump
+  /tmp/restore/data/pgdump.dump
 ```
 
-Adjust restore paths to match the selected snapshot and mount layout.
+### 3) Restore Immich `pg_dumpall` output (plain SQL, if present)
+
+`pg_dumpall` output is plain SQL and should be restored with `psql`, not `pg_restore`.
+
+```bash
+psql \
+  -h <postgres_host> \
+  -p 5432 \
+  -U <postgres_superuser> \
+  -f /tmp/restore/data/immich/pgdumpall/pgdump.sql
+```
+
+### 4) Restore OpenBao raft snapshot
+
+Use OpenBao raft snapshot restore workflow against a stopped/unsealed target per OpenBao operational procedure, using the restored `openbao.raft` artifact.
+
+## Validation Checklist (Operational)
+
+- Confirm each backup container is running and cron has executed in the last 24h (OpenBao: last 15m).
+- Confirm both repositories receive snapshots for each service where dual-target is expected.
+- Perform at least quarterly restore drills:
+  - File restore drill for each service.
+  - DB restore drill for `keycloak`.
+  - OpenBao raft snapshot restore drill in a non-production environment.
+- Record restore time and missing steps back into this file.
+
+## Priority Improvements
+
+1. Standardize DB backups:
+- Add logical dump for `linkwarden` postgres.
+- Decide whether `immich` should keep raw PG files or rely on logical dump only.
+
+2. Add integrity verification:
+- Add scheduled `restic check` (for both B2 and R2 repos).
+
+3. Tighten failure signaling:
+- Make backup containers fail hard on any repo failure.
+- Add log-based alerting or notification on failed runs.
+
+4. Nextcloud:
+- Document official Nextcloud AIO backup/restore process separately and link it here.
