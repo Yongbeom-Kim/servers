@@ -38,6 +38,11 @@ services:
         condition: service_healthy
       linkwarden_meilisearch:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
   linkwarden_meilisearch:
     profiles: ["linkwarden", "all"]
     container_name: linkwarden_meilisearch
@@ -60,21 +65,23 @@ services:
       KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
       BACKUP_ON_STARTUP: ${LINKWARDEN_BACKUP_ON_STARTUP:-false}
       RESTIC_PASSWORD: ${RESTIC_PASSWORD:?}
+      BACKUP_PATH: /data/linkwarden
+      BACKUP_TARGET_CONTAINERS: linkwarden_server linkwarden_meilisearch linkwarden_postgres
       B2_REPO: ${LINKWARDEN_B2_REPO:?}
       R2_REPO: ${LINKWARDEN_R2_REPO:?}
-      B2_APPLICATION_KEY_ID: ${B2_APPLICATION_KEY_ID:?}
-      B2_APPLICATION_KEY: ${B2_APPLICATION_KEY:?}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:?}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:?}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-auto}
-      PGHOST: linkwarden_postgres
-      PGPORT: 5432
-      PGDATABASE: postgres
-      PGUSER: postgres
-      PGPASSWORD: ${LINKWARDEN_POSTGRES_PASSWORD:?}
     labels:
       com.backup.enabled: "true"
       com.backup.project: "linkwarden"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${VOLUME_BASE_DIR:?}/linkwarden/:/data/linkwarden:ro
     depends_on:
       linkwarden_postgres:
+        condition: service_healthy
+      linkwarden_server:
         condition: service_healthy
