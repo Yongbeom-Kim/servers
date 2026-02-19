@@ -20,4 +20,4 @@ COPY crontab /etc/crontab
 
 RUN chmod +x /usr/local/bin/backup.sh
 
-CMD ["supercronic", "/etc/crontab"]
+CMD ["sh", "-c", "if [ \"${BACKUP_ON_STARTUP:-false}\" = \"true\" ]; then /usr/local/bin/backup.sh; fi; exec supercronic /etc/crontab"]

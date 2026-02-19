@@ -22,14 +22,16 @@ services:
       - ${VOLUME_BASE_DIR?:}/immich/data:/data
       - /etc/localtime:/etc/localtime:ro
     environment:
+      DB_HOSTNAME: immich-database
+      REDIS_HOSTNAME: immich-redis
       DB_USERNAME: ${IMMICH_DB_USERNAME:?IMMICH_DB_USERNAME not set}
       DB_DATABASE_NAME: ${IMMICH_DB_DATABASE_NAME:?IMMICH_DB_DATABASE_NAME not set}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD:?IMMICH_DB_PASSWORD not set}
     ports:
       - '${IMMICH_PORT}:2283'
     depends_on:
-      - redis
-      - database
+      - immich-redis
+      - immich-database
     restart: always
     healthcheck:
       disable: false
@@ -46,6 +48,8 @@ services:
     volumes:
       - model-cache:/cache
     environment:
+      DB_HOSTNAME: immich-database
+      REDIS_HOSTNAME: immich-redis
       DB_USERNAME: ${IMMICH_DB_USERNAME:?IMMICH_DB_USERNAME not set}
       DB_DATABASE_NAME: ${IMMICH_DB_DATABASE_NAME:?IMMICH_DB_DATABASE_NAME not set}
       DB_PASSWORD: ${IMMICH_DB_PASSWORD:?IMMICH_DB_PASSWORD not set}
@@ -53,7 +57,7 @@ services:
     healthcheck:
       disable: false
 
-  redis:
+  immich-redis:
     profiles: ["immich", "all"]
     container_name: immich_redis
     image: docker.io/valkey/valkey:9@sha256:546304417feac0874c3dd576e0952c6bb8f06bb4093ea0c9ca303c73cf458f63
@@ -61,7 +65,7 @@ services:
       test: redis-cli ping || exit 1
     restart: always
 
-  database:
+  immich-database:
     profiles: ["immich", "all"]
     container_name: immich_postgres
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
@@ -81,8 +85,9 @@ services:
     healthcheck:
       disable: false
 
-  backup:
+  immich-backup:
     profiles: ["immich", "all"]
+    container_name: immich_backup
     build:
       context: ./backup
       dockerfile: Dockerfile
@@ -93,18 +98,35 @@ services:
       KEEP_DAILY: ${KEEP_DAILY:-7}
       KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
       KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
-      PGHOST: database
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is not set}
+      BACKUP_PATH: /data/immich
+      BACKUP_EXCLUDE_PATH: /data/immich/immich_postgres/data
+      BACKUP_ON_STARTUP: ${IMMICH_BACKUP_ON_STARTUP:-false}
+      B2_REPO: ${IMMICH_B2_REPO:?}
+      R2_REPO: ${IMMICH_R2_REPO:?}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:?}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:?}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-auto}
+      PGHOST: immich-database
       PGPORT: "5432"
-      PGDATABASE: ${IMMICH_DB_DATABASE_NAME}
-      PGUSER: ${IMMICH_DB_USERNAME}
-      PGPASSWORD: ${IMMICH_DB_PASSWORD}
-    depends_on:
-      - database
+      PGUSER: ${IMMICH_DB_USERNAME:?IMMICH_DB_USERNAME not set}
+      PGPASSWORD: ${IMMICH_DB_PASSWORD:?IMMICH_DB_PASSWORD not set}
     labels:
       com.backup.enabled: "true"
       com.backup.project: "immich"
+      # TODO: seems like we're backing up both the pgdumpall and the raw pg files.
+      # We should deduplicate and save some storage.
     volumes:
-      - ${VOLUME_BASE_DIR?:}/immich/data:/data/immich-server/data:ro
-
+      - ${VOLUME_BASE_DIR?:}/immich/data:/data/immich/immich_server/data:ro
+      - ${IMMICH_DB_DATA_LOCATION}:/data/immich/immich_postgres/data:ro
+    depends_on:
+      immich-database:
+        condition: service_healthy
+      immich-redis:
+        condition: service_started
+      immich-server:
+        condition: service_started
 volumes:
   model-cache:

@@ -24,7 +24,7 @@ Backups are intentionally staggered so postgres logical dumps do not start at th
 
 | Project | Daily time (local) | Notes |
 |---|---|---|
-| immich | 03:10 | includes `pg_dump` |
+| immich | 03:10 | host cron; run `immich/backup/backup.sh` with BACKUP_PATH set to host paths |
 | keycloak | 03:25 | includes `pg_dump` |
 | linkwarden | 03:40 | includes `pg_dump` |
 | offline-notion | 04:00 | file backup |
@@ -39,7 +39,7 @@ Timing is configured per project in `backup/crontab`.
 
 ### Service test checklist (excluding Caddy)
 
-- [ ] immich: run `docker compose --profile immich up -d backup` and verify backup + `pg_dump` completes.
+- [ ] immich: run `immich/backup/backup.sh` on the host (cron 03:10); set BACKUP_PATH to `${VOLUME_BASE_DIR}/immich/data` and `${IMMICH_DB_DATA_LOCATION}`.
 - [ ] keycloak: run `docker compose --profile keycloak up -d backup` and verify backup + `pg_dump` completes.
 - [ ] linkwarden: run `docker compose --profile linkwarden up -d backup` and verify backup + `pg_dump` completes.
 - [ ] offline-notion: run `docker compose up -d backup` and verify file backup completes.
@@ -59,7 +59,7 @@ Timing is configured per project in `backup/crontab`.
 - Always:
   - `RESTIC_PASSWORD`
 - B2 target:
-  - `B2_REPO`, `B2_ACCOUNT_ID`, `B2_ACCOUNT_KEY`
+  - `B2_REPO`, `B2_APPLICATION_KEY_ID`, `B2_APPLICATION_KEY`
 - R2 target:
   - `R2_REPO`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` (`auto` default)
 - Retention (optional overrides):
@@ -76,8 +76,8 @@ Timing is configured per project in `backup/crontab`.
 ```bash
 export RESTIC_PASSWORD='...'
 export RESTIC_REPOSITORY='b2:bucket/path'
-export B2_ACCOUNT_ID='...'
-export B2_ACCOUNT_KEY='...'
+export B2_APPLICATION_KEY_ID='...'
+export B2_APPLICATION_KEY='...'
 
 restic snapshots
 restic restore <snapshot_id> --target /tmp/restore
