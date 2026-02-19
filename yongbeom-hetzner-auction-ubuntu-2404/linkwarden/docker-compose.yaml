@@ -7,7 +7,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${LINKWARDEN_POSTGRES_PASSWORD:?}
     volumes:
-      - ${VOLUME_BASE_DIR:?}/linkwarden/postgresql:/var/lib/postgresql
+      - ${VOLUME_BASE_DIR:?}/linkwarden/postgresql/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
