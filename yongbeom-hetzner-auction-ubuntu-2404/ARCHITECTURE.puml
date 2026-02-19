@@ -1,0 +1,136 @@
+@startuml
+title Yongbeom Hetzner Server Architecture
+left to right direction
+skinparam packageStyle rectangle
+
+package "OpenTofu / Terraform IaC" as IAC {
+  component "tofu-infra" as TOFU
+  cloud "AWS Route53\nyongbeom.net" as R53
+  cloud "B2: backup-auth-yongbeom-net" as B2_AUTH
+  cloud "B2: backup-links-yongbeom-net" as B2_LINKS
+  cloud "B2: backup-pw-yongbeom-net" as B2_PW
+  cloud "B2: backup-bao-yongbeom-net" as B2_BAO
+  cloud "B2: backup-photos-yongbeom-net" as B2_PHOTOS
+  cloud "B2: offline-notion\nbackup bucket/repo" as B2_NOTION
+
+  cloud "R2: backup-auth-yongbeom-net" as R2_AUTH
+  cloud "R2: backup-links-yongbeom-net" as R2_LINKS
+  cloud "R2: backup-pw-yongbeom-net" as R2_PW
+  cloud "R2: backup-bao-yongbeom-net" as R2_BAO
+  cloud "R2: backup-photos-yongbeom-net" as R2_PHOTOS
+  cloud "R2: offline-notion\nbackup bucket/repo" as R2_NOTION
+
+  TOFU --> R53
+  TOFU --> B2_AUTH
+  TOFU --> B2_LINKS
+  TOFU --> B2_PW
+  TOFU --> B2_BAO
+  TOFU --> B2_PHOTOS
+  TOFU --> R2_AUTH
+  TOFU --> R2_LINKS
+  TOFU --> R2_PW
+  TOFU --> R2_BAO
+  TOFU --> R2_PHOTOS
+  TOFU ..> B2_NOTION : TODO/not provisioned in this stack
+  TOFU ..> R2_NOTION : TODO/not provisioned in this stack
+}
+
+actor "Internet Clients" as CLIENT
+cloud "Route53 DNS records\nA/AAAA + www aliases" as DNS
+
+CLIENT --> DNS
+R53 --> DNS
+
+node "Hetzner Ubuntu 24.04 Host" as HOST {
+  component "Caddy\n:80/:443 host network" as CADDY
+
+  component "Keycloak\nlocalhost:2404" as KC
+  database "keycloak_postgres" as KCPG
+
+  component "Linkwarden\nlocalhost:2405" as LW
+  database "linkwarden_postgres" as LWPG
+  database "meilisearch" as MEILI
+
+  component "Nextcloud AIO\nlocalhost:2406" as NC
+  artifact "/var/run/docker.sock\n(AIO orchestrator)" as NCDOCKER
+
+  component "Vaultwarden\nlocalhost:2407" as VW
+
+  component "OpenBao\nlocalhost:2408" as OB
+  storage "openbao raft/log/file\nvolumes" as OBRAFT
+
+  component "Immich\nlocalhost:2283" as IM
+  database "immich_postgres" as IMPG
+  database "immich_redis" as IMR
+  component "immich_machine_learning" as ML
+
+  CADDY --> KC
+  CADDY --> LW
+  CADDY --> NC
+  CADDY --> VW
+  CADDY --> OB
+  CADDY --> IM
+
+  KC --> KCPG
+
+  LW --> LWPG
+  LW --> MEILI
+  LW ..> KC : OIDC
+
+  NC --> NCDOCKER
+
+  OB --> OBRAFT
+
+  IM --> IMPG
+  IM --> IMR
+  IM --> ML
+}
+
+DNS --> HOST : auth/links/drive/pw/bao/photos/notion/v1.notion
+
+package "Backup Sidecars (restic + supercronic)" as BACKUP {
+  component "keycloak-backup\n03:25 daily\npg_dump + /data" as KCB
+  component "linkwarden-backup\n03:40 daily\nstops app+db+meili" as LWB
+  component "vaultwarden-backup\n04:20 daily\nstops vaultwarden" as VWB
+  component "openbao-backup\n*/15 min\nraft snapshot" as OBB
+  component "immich-backup\n03:10 daily\nfiles + optional pg_dumpall" as IMB
+  component "offline-notion backup\n04:00 daily\n(offline-notion stack)" as ONB
+}
+
+KCPG --> KCB
+LWPG --> LWB
+MEILI --> LWB
+VW --> VWB
+OB --> OBB
+IM --> IMB
+IMPG --> IMB
+
+KCB --> B2_AUTH : restic
+KCB --> R2_AUTH : restic
+LWB --> B2_LINKS : restic
+LWB --> R2_LINKS : restic
+VWB --> B2_PW : restic
+VWB --> R2_PW : restic
+OBB --> B2_BAO : restic
+OBB --> R2_BAO : restic
+IMB --> B2_PHOTOS : restic
+IMB --> R2_PHOTOS : restic
+
+package "Offline-Notion Stack\n(present in repo, separate compose)" as ON {
+  component "caddy\n(v1.docs style routing)" as ONCADDY
+  component "client" as ONC
+  component "backend" as ONAPI
+  component "voidauth" as ONAUTH
+  database "redis" as ONREDIS
+
+  ONCADDY --> ONC
+  ONCADDY --> ONAPI
+  ONCADDY --> ONAUTH
+  ONAPI --> ONREDIS
+}
+
+DNS ..> ONCADDY : optional/not in root compose
+ONB --> B2_NOTION : restic
+ONB --> R2_NOTION : restic
+
+@enduml
