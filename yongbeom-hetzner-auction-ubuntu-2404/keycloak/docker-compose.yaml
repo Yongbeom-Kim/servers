@@ -1,6 +1,7 @@
 services:
   keycloak_postgres:
     profiles: ["keycloak", "all"]
+    container_name: keycloak_postgres
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
@@ -9,9 +10,15 @@ services:
       POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is not set}
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/keycloak/postgresql/data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KC_DB_USERNAME:?KC_DB_USERNAME is not set} -d ${KC_DB_NAME:?KC_DB_NAME is not set}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    
   keycloak_server:
     profiles: ["keycloak", "all"]
+    container_name: keycloak_server
     image: quay.io/keycloak/keycloak:26.5.3
     command:
       - start
@@ -45,7 +52,7 @@ services:
       retries: 5
       start_period: 20s
 
-  backup:
+  keycloak-backup:
     profiles: ["keycloak", "all"]
     build:
       context: ./backup
@@ -57,13 +64,23 @@ services:
       KEEP_DAILY: ${KEEP_DAILY:-7}
       KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
       KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is not set}
+      BACKUP_ON_STARTUP: ${KEYCLOAK_BACKUP_ON_STARTUP:-true}
       PGHOST: keycloak_postgres
-      PGPORT: "5432"
-      PGDATABASE: ${KC_DB_NAME}
-      PGUSER: ${KC_DB_USERNAME}
-      PGPASSWORD: ${KC_DB_PASSWORD}
-    depends_on:
-      - keycloak_postgres
+      PGPORT: 5432
+      PGDATABASE: ${KC_DB_NAME:?KC_DB_NAME is not set}
+      PGUSER: ${KC_DB_USERNAME:?KC_DB_USERNAME is not set}
+      PGPASSWORD: ${KC_DB_PASSWORD:?KC_DB_PASSWORD is not set}
+      B2_REPO: ${KEYCLOAK_B2_REPO:?}
+      R2_REPO: ${KEYCLOAK_R2_REPO:?}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:?}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:?}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-auto}
     labels:
       com.backup.enabled: "true"
       com.backup.project: "keycloak"
+    depends_on:
+      keycloak_postgres:
+        condition: service_healthy

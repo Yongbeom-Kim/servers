@@ -1,4 +1,24 @@
 #!/bin/sh
+#
+# Required environment variables:
+#   RESTIC_PASSWORD          - Password for the restic repository
+#
+#   At least one of the following repository variables must be set:
+#     B2_REPO         - Restic repository URL for Backblaze B2 (e.g. "b2:my-bucket:path")
+#       B2_APPLICATION_KEY_ID - B2 account/app key id
+#       B2_APPLICATION_KEY   - B2 account/app key
+#
+#     R2_REPO         - Restic repository URL for Cloudflare R2/S3-compatible
+#       AWS_ACCESS_KEY_ID     - AWS/R2 Access Key ID (required if R2_REPO is set)
+#       AWS_SECRET_ACCESS_KEY - AWS/R2 Secret Access Key (required if R2_REPO is set)
+#       AWS_DEFAULT_REGION    - AWS region (optional for R2; default: 'auto')
+#
+# Optional environment variables:
+#   KEEP_DAILY      - Number of daily backups to keep (default: 7)
+#   KEEP_WEEKLY     - Number of weekly backups to keep (default: 4)
+#   KEEP_MONTHLY    - Number of monthly backups to keep (default: 12)
+#
+
 set -eu
 
 log() {
@@ -9,19 +29,6 @@ KEEP_DAILY="${KEEP_DAILY:-7}"
 KEEP_WEEKLY="${KEEP_WEEKLY:-4}"
 KEEP_MONTHLY="${KEEP_MONTHLY:-12}"
 
-if [ -z "${RESTIC_PASSWORD:-}" ]; then
-  log "RESTIC_PASSWORD is required"
-  exit 1
-fi
-
-DATA_PATHS="${BACKUP_PATHS:-}"
-if [ -z "$DATA_PATHS" ] && [ -d /data ]; then
-  DATA_PATHS="/data"
-fi
-
-ARTIFACT_DIR="/tmp/backup-artifacts"
-mkdir -p "$ARTIFACT_DIR"
-
 LOCK_DIR="/tmp/backup.lock"
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
   log "another backup run is active; skipping"
@@ -29,47 +36,25 @@ if ! mkdir "$LOCK_DIR" 2>/dev/null; then
 fi
 trap 'rmdir "$LOCK_DIR"' EXIT INT TERM
 
-PG_DUMP_PATH=""
-has_any_pg_var=0
-for pg_var in PGHOST PGDATABASE PGUSER PGPASSWORD; do
-  eval "pg_val=\${$pg_var:-}"
-  if [ -n "$pg_val" ]; then
-    has_any_pg_var=1
-    break
-  fi
-done
+BACKUP_PATH=/data
+mkdir -p "$BACKUP_PATH"
 
-if [ "${PGHOST:-}" ] && [ "${PGDATABASE:-}" ] && [ "${PGUSER:-}" ] && [ "${PGPASSWORD:-}" ]; then
-  export PGPASSWORD
-  PG_DUMP_PATH="$ARTIFACT_DIR/postgres-${PGDATABASE}-$(date +%F-%H%M%S).dump"
-  log "creating pg_dump from ${PGHOST}:${PGPORT:-5432}/${PGDATABASE}"
-  if ! pg_dump \
-    --format=custom \
-    --no-owner \
-    --no-privileges \
-    -h "${PGHOST}" \
-    -p "${PGPORT:-5432}" \
-    -U "${PGUSER}" \
-    -d "${PGDATABASE}" \
-    -f "$PG_DUMP_PATH"; then
-    log "pg_dump failed"
-    exit 1
-  fi
-elif [ "$has_any_pg_var" -eq 1 ]; then
-  log "PG* variables are only partially configured; skipping pg_dump"
-fi
+PG_DUMP_PATH="${BACKUP_PATH}/pgdump.dump"
 
-TARGETS=""
-if [ -n "$DATA_PATHS" ]; then
-  TARGETS="$TARGETS $DATA_PATHS"
-fi
-if [ -n "$PG_DUMP_PATH" ]; then
-  TARGETS="$TARGETS $PG_DUMP_PATH"
-fi
+export PGPASSWORD
+log "creating pg_dump from ${PGHOST}:${PGPORT:-5432}/${PGDATABASE}"
 
-if [ -z "$TARGETS" ]; then
-  log "nothing to back up; set BACKUP_PATHS or mount data under /data"
-  exit 0
+if ! pg_dump \
+  --format=custom \
+  --no-owner \
+  --no-privileges \
+  -h "${PGHOST}" \
+  -p "${PGPORT:-5432}" \
+  -U "${PGUSER}" \
+  -d "${PGDATABASE}" \
+  -f "$PG_DUMP_PATH"; then
+  log "pg_dump failed"
+  exit 1
 fi
 
 run_repo() {
@@ -89,6 +74,8 @@ run_repo() {
   fi
 
   log "running restic backup to $repo_name"
+  log "backing up files in $@"
+  ls -l "$@"
   restic backup "$@"
   restic forget \
     --prune \
@@ -97,45 +84,18 @@ run_repo() {
     --keep-monthly "$KEEP_MONTHLY"
 }
 
-set -- $TARGETS
-
-attempted=0
-failures=0
-
-if [ -n "${B2_REPO:-}" ]; then
-  attempted=$((attempted + 1))
-  if [ -z "${B2_ACCOUNT_ID:-}" ] || [ -z "${B2_ACCOUNT_KEY:-}" ]; then
-    log "B2_REPO is set but B2_ACCOUNT_ID or B2_ACCOUNT_KEY is missing"
-    failures=$((failures + 1))
-  else
-    export B2_ACCOUNT_ID B2_ACCOUNT_KEY
-    if ! run_repo "B2" "$B2_REPO" "$@"; then
-      failures=$((failures + 1))
-    fi
-  fi
+export B2_ACCOUNT_ID B2_ACCOUNT_KEY
+if run_repo "B2" "$B2_REPO" /data; then
+  log "B2 backup completed successfully"
+else
+  log "B2 backup failed"
 fi
 
-if [ -n "${R2_REPO:-}" ]; then
-  attempted=$((attempted + 1))
-  if [ -z "${AWS_ACCESS_KEY_ID:-}" ] || [ -z "${AWS_SECRET_ACCESS_KEY:-}" ]; then
-    log "R2_REPO is set but AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is missing"
-    failures=$((failures + 1))
-  else
-    export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-auto}"
-    if ! run_repo "R2" "$R2_REPO" "$@"; then
-      failures=$((failures + 1))
-    fi
-  fi
-fi
-
-if [ "$attempted" -eq 0 ]; then
-  log "no repository configured; set B2_REPO and/or R2_REPO"
-  exit 1
-fi
-
-if [ "$failures" -gt 0 ]; then
-  log "backup finished with ${failures} failure(s)"
-  exit 1
+export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_REGION
+if run_repo "R2" "$R2_REPO" /data; then
+  log "R2 backup completed successfully"
+else
+  log "R2 backup failed"
 fi
 
 log "backup completed successfully"
