@@ -6,3 +6,4 @@ include:
   - vaultwarden/docker-compose.yaml
   - openbao/docker-compose.yaml
   - immich/docker-compose.yaml
+  - forgejo/docker-compose.yaml

@@ -1,0 +1,82 @@
+services:
+  forgejo_postgres:
+    profiles: ["forgejo", "all"]
+    container_name: forgejo_postgres
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${FORGEJO_DB_NAME:?FORGEJO_DB_NAME is not set}
+      POSTGRES_USER: ${FORGEJO_DB_USERNAME:?FORGEJO_DB_USERNAME is not set}
+      POSTGRES_PASSWORD: ${FORGEJO_DB_PASSWORD:?FORGEJO_DB_PASSWORD is not set}
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/forgejo/postgresql/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${FORGEJO_DB_USERNAME:?FORGEJO_DB_USERNAME is not set} -d ${FORGEJO_DB_NAME:?FORGEJO_DB_NAME is not set}"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  forgejo_server:
+    profiles: ["forgejo", "all"]
+    container_name: forgejo_server
+    image: codeberg.org/forgejo/forgejo:14.0.2
+    restart: unless-stopped
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      FORGEJO__database__DB_TYPE: postgres
+      FORGEJO__database__HOST: forgejo_postgres:5432
+      FORGEJO__database__NAME: ${FORGEJO_DB_NAME:?FORGEJO_DB_NAME is not set}
+      FORGEJO__database__USER: ${FORGEJO_DB_USERNAME:?FORGEJO_DB_USERNAME is not set}
+      FORGEJO__database__PASSWD: ${FORGEJO_DB_PASSWORD:?FORGEJO_DB_PASSWORD is not set}
+    ports:
+      - "${FORGEJO_PORT:?FORGEJO_PORT is not set}:3000"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/forgejo/data:/data
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      forgejo_postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  forgejo-backup:
+    profiles: ["forgejo", "all"]
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      KEEP_DAILY: ${KEEP_DAILY:-7}
+      KEEP_WEEKLY: ${KEEP_WEEKLY:-4}
+      KEEP_MONTHLY: ${KEEP_MONTHLY:-12}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is not set}
+      BACKUP_ON_STARTUP: ${FORGEJO_BACKUP_ON_STARTUP:-false}
+      PGHOST: forgejo_postgres
+      PGPORT: 5432
+      PGDATABASE: ${FORGEJO_DB_NAME:?FORGEJO_DB_NAME is not set}
+      PGUSER: ${FORGEJO_DB_USERNAME:?FORGEJO_DB_USERNAME is not set}
+      PGPASSWORD: ${FORGEJO_DB_PASSWORD:?FORGEJO_DB_PASSWORD is not set}
+      BACKUP_PATH: /data/forgejo
+      B2_REPO: ${FORGEJO_B2_REPO:?}
+      R2_REPO: ${FORGEJO_R2_REPO:?}
+      B2_ACCOUNT_ID: ${B2_ACCOUNT_ID:?}
+      B2_ACCOUNT_KEY: ${B2_ACCOUNT_KEY:?}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:?}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:?}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-auto}
+    labels:
+      com.backup.enabled: "true"
+      com.backup.project: "forgejo"
+    volumes:
+      - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/forgejo/data:/data/forgejo:ro
+    depends_on:
+      forgejo_postgres:
+        condition: service_healthy
+      forgejo_server:
+        condition: service_healthy

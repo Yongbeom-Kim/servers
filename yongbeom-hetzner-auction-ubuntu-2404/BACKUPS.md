@@ -6,6 +6,7 @@ Excluded from this review by request: git submodules (including `offline-notion`
 ## Scope
 
 Services reviewed:
+- `forgejo`
 - `immich`
 - `keycloak`
 - `linkwarden`
@@ -30,6 +31,7 @@ Not covered by current sidecar backup:
 
 | Service | Schedule | Backed up data | DB approach | Downtime impact |
 |---|---|---|---|---|
+| `forgejo` | `03:55` daily | `/data/forgejo` (git repos, attachments) + `/data/pgdump` (`pg_dump --format=custom`) | Required `pg_dump --format=custom` before restic | No intentional stop/start |
 | `immich` | `03:10` daily | `/data/immich` (bind mounts include server files and raw postgres dir) | Optional `pg_dumpall` when PG env vars are set | No intentional stop/start |
 | `keycloak` | `03:25` daily | `/data` containing `pgdump.dump` | Required `pg_dump --format=custom` before restic | No intentional stop/start |
 | `linkwarden` | `03:40` daily | `/data/linkwarden` (includes app files, meilisearch data, postgres data dir) | No logical dump; file-level capture after stopping containers | Stops `linkwarden_server`, `linkwarden_meilisearch`, `linkwarden_postgres` during backup |
@@ -110,7 +112,24 @@ restic snapshots
 restic restore <snapshot_id> --target /tmp/restore
 ```
 
-### 2) Restore Keycloak database dump (`pg_dump --format=custom`)
+### 2) Restore Forgejo (database dump + data files)
+
+Forgejo backup contains both a `pg_dump --format=custom` dump and the data directory (git repos, attachments).
+
+```bash
+# Restore database
+pg_restore \
+  -h <postgres_host> \
+  -p 5432 \
+  -U <postgres_user> \
+  -d <database_name> \
+  /tmp/restore/data/pgdump/pgdump.dump
+
+# Restore data files (git repos, attachments, etc.)
+cp -a /tmp/restore/data/forgejo/* /path/to/forgejo/data/
+```
+
+### 3) Restore Keycloak database dump (`pg_dump --format=custom`)
 
 ```bash
 pg_restore \
@@ -121,7 +140,7 @@ pg_restore \
   /tmp/restore/data/pgdump.dump
 ```
 
-### 3) Restore Immich `pg_dumpall` output (plain SQL, if present)
+### 4) Restore Immich `pg_dumpall` output (plain SQL, if present)
 
 `pg_dumpall` output is plain SQL and should be restored with `psql`, not `pg_restore`.
 
@@ -133,7 +152,7 @@ psql \
   -f /tmp/restore/data/immich/pgdumpall/pgdump.sql
 ```
 
-### 4) Restore OpenBao raft snapshot
+### 5) Restore OpenBao raft snapshot
 
 Use OpenBao raft snapshot restore workflow against a stopped/unsealed target per OpenBao operational procedure, using the restored `openbao.raft` artifact.
 
@@ -143,7 +162,7 @@ Use OpenBao raft snapshot restore workflow against a stopped/unsealed target per
 - Confirm both repositories receive snapshots for each service where dual-target is expected.
 - Perform at least quarterly restore drills:
   - File restore drill for each service.
-  - DB restore drill for `keycloak`.
+  - DB restore drill for `keycloak` and `forgejo`.
   - OpenBao raft snapshot restore drill in a non-production environment.
 - Record restore time and missing steps back into this file.
 

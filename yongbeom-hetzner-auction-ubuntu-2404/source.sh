@@ -6,6 +6,6 @@ set +a
 
 tofu() {
 	. ./source.sh
-	( cd ./tofu-infra
+	( cd ./tofu-infra &&
 	command tofu "$@" )
 }

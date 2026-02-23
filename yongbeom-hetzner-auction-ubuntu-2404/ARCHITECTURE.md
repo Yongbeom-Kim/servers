@@ -11,6 +11,7 @@
 | Vaultwarden | Lightweight Bitwarden-compatible password manager with a dedicated automated backup job. |
 | OpenBao | Secrets management service (Vault-compatible) using local raft storage, with a dedicated automated backup job. |
 | Immich | Photo/video management platform with its API server, ML worker, Redis (Valkey), PostgreSQL, and backup job. |
+| Forgejo | Self-hosted git forge backed by PostgreSQL, with a dedicated automated backup job. |
 | Offline Notion | Self-hosted Notion-like stack (client, backend, Redis, VoidAuth) with a dedicated backup job. |
 | AWS Route53 DNS module | Creates A/AAAA records (including `www`) for each service domain. |
 | Backup bucket module (B2 + Cloudflare R2) | Provisions per-service object storage buckets used as backup destinations. |

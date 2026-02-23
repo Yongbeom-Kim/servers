@@ -61,6 +61,7 @@ module "aws-dns" {
     "photos.yongbeom.net",
     "notion.yongbeom.net",
     "v1.notion.yongbeom.net",
+    "git.yongbeom.net",
   ])
   domain      = each.value
   public_ipv4 = var.public_ipv4
@@ -76,6 +77,7 @@ module "backup_bucket" {
     "backup-pw-yongbeom-net",
     "backup-bao-yongbeom-net",
     "backup-photos-yongbeom-net",
+    "backup-git-yongbeom-net",
     # "notion.yongbeom.net", # TODO: low priority
     # "v1.notion.yongbeom.net", # TODO: low priority
   ])

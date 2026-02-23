@@ -30,3 +30,7 @@
 {$OFFLINE_NOTION_V1_HOSTNAME} {
 	reverse_proxy localhost:{$OFFLINE_NOTION_PORT}
 }
+
+{$FORGEJO_HOSTNAME} {
+	reverse_proxy localhost:{$FORGEJO_PORT}
+}

@@ -27,6 +27,8 @@ This is a hardened OpenSSH server config. It:
 | Nextcloud AIO   | 2406 | [drive.yongbeom.net](https://drive.yongbeom.net) |
 | Vaultwarden     | 2407 | [pw.yongbeom.net](https://pw.yongbeom.net)       |
 | OpenBao         | 2408 | [bao.yongbeom.net](https://bao.yongbeom.net)     |
+| Immich          | 2409 | [photos.yongbeom.net](https://photos.yongbeom.net) |
+| Forgejo         | 2410 | [git.yongbeom.net](https://git.yongbeom.net)     |
 
 ### Mine
 
