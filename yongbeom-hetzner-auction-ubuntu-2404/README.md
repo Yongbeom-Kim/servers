@@ -29,6 +29,9 @@ This is a hardened OpenSSH server config. It:
 | OpenBao         | 2408 | [bao.yongbeom.net](https://bao.yongbeom.net)     |
 | Immich          | 2409 | [photos.yongbeom.net](https://photos.yongbeom.net) |
 | Forgejo         | 2410 | [git.yongbeom.net](https://git.yongbeom.net)     |
+| Forgejo SSH     | 222  | `git@git.yongbeom.net` (SSH)                     |
+
+> **TODO:** Set up a proper SSH reverse proxy (e.g. `sslh` or HAProxy) so multiple services can share port 22 for SSH, instead of each needing its own port.
 
 ### Mine
 

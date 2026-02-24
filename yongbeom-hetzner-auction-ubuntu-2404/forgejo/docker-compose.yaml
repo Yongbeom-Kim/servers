@@ -29,8 +29,10 @@ services:
       FORGEJO__database__NAME: ${FORGEJO_DB_NAME:?FORGEJO_DB_NAME is not set}
       FORGEJO__database__USER: ${FORGEJO_DB_USERNAME:?FORGEJO_DB_USERNAME is not set}
       FORGEJO__database__PASSWD: ${FORGEJO_DB_PASSWORD:?FORGEJO_DB_PASSWORD is not set}
+      FORGEJO__server__SSH_PORT: ${FORGEJO_SSH_PORT:?FORGEJO_SSH_PORT is not set}
     ports:
       - "${FORGEJO_PORT:?FORGEJO_PORT is not set}:3000"
+      - "${FORGEJO_SSH_PORT:?FORGEJO_SSH_PORT is not set}:22"
     volumes:
       - ${VOLUME_BASE_DIR:?VOLUME_BASE_DIR is not set}/forgejo/data:/data
       - /etc/localtime:/etc/localtime:ro
