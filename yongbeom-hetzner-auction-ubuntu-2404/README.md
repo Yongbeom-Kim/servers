@@ -12,7 +12,7 @@ This is a hardened OpenSSH server config. It:
 
 - **Disables root SSH:** `PermitRootLogin no`
 - **Key-only auth:** password and keyboard-interactive are off; only `PubkeyAuthentication` is used
-- **Restricts login to one user:** `AllowUsers server` (only `server` can SSH)
+- **Restricts login:** `AllowUsers server tunnel` (`server` for admin, `tunnel` for reverse SSH tunnels)
 - **Keeps PAM** for account/session handling
 - **Disables X11 forwarding** because I don't need it and ChatGPT suggested it
 
@@ -32,6 +32,15 @@ This is a hardened OpenSSH server config. It:
 | Forgejo SSH     | 222  | `git@git.yongbeom.net` (SSH)                     |
 
 > **TODO:** Set up a proper SSH reverse proxy (e.g. `sslh` or HAProxy) so multiple services can share port 22 for SSH, instead of each needing its own port.
+
+### SSH Tunnels
+
+Reverse SSH tunnels allow access to home laptops from a phone (Termux) via the VPS as a jump host. Each laptop runs `autossh` to maintain a persistent reverse tunnel to the VPS. See [`ssh_tunnel/SSH_TUNNEL.md`](./ssh_tunnel/SSH_TUNNEL.md) for full setup.
+
+| Target          | Port | Command (from phone)                                   |
+| --------------- | ---- | ------------------------------------------------------ |
+| Fedora Laptop   | 2222 | `ssh -J tunnel@ssh.yongbeom.net -p 2222 user@localhost` |
+| MacOS Laptop    | 2223 | `ssh -J tunnel@ssh.yongbeom.net -p 2223 user@localhost` |
 
 ### Mine
 
