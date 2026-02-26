@@ -62,6 +62,7 @@ module "aws-dns" {
     "notion.yongbeom.net",
     "v1.notion.yongbeom.net",
     "git.yongbeom.net",
+    "ssh.yongbeom.net",
   ])
   domain      = each.value
   public_ipv4 = var.public_ipv4
