@@ -55,6 +55,8 @@ Add at bottom:
 Match User tunnel
     AllowTcpForwarding yes
     PermitOpen localhost:2222 localhost:2223
+    GatewayPorts no
+    PermitTunnel no
     X11Forwarding no
     AllowAgentForwarding no
     PermitTTY no
@@ -74,6 +76,22 @@ sudo systemctl restart ssh
 ```bash
 sudo vim ~/.ssh/authorized_keys
 # Add public key of phone termux
+```
+
+sshd
+```bash
+sudo vim /etc/ssh/sshd_config
+
+## Add the following lines:
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+AllowUsers username
+MaxAuthTries 3
+
+ListenAddress 127.0.0.1
+ListenAddress ::1
+
 ```
 
 ```bash
@@ -137,7 +155,25 @@ sudo systemsetup -setremotelogin on
 sudo dseditgroup -o edit -a $(whoami) -t user com.apple.access_ssh
 ```
 
-### 2. Public Keys
+### 2. SSH + Public Keys
+
+
+
+sshd
+```bash
+sudo vim /etc/ssh/sshd_config
+
+## Add the following lines:
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+AllowUsers username
+MaxAuthTries 3
+
+ListenAddress 127.0.0.1
+ListenAddress ::1
+
+```
 
 - Public key from phone on MacOS `~/.ssh/authorized_keys`
 - Public key from MacOS on VPS `~tunnel/.ssh/authorized_keys`
