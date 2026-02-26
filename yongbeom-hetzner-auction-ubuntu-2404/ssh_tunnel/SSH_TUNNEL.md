@@ -1,6 +1,8 @@
 # SSH Tunnel Setup
 
-## Commands (from Phone on Termux)
+## Commands
+
+### Phone Termux
 
 ```bash
 # To Fedora
@@ -10,6 +12,18 @@ ssh -J tunnel@ssh.yongbeom.net -p 2222 yongbeom_kim@localhost \
 # To MacOS
 ssh -J tunnel@ssh.yongbeom.net -p 2223 bytedance@localhost \
   -t 'tmux -u new-session -A -s claude-mcp -c ~/Dev/bytedance/claude-mcp'
+```
+
+### Fedora
+```bash
+# Do not sleep
+# Note: you can't close the lid
+systemd-inhibit --what=idle --who="reverse-ssh" --why="Keep SSH tunnel alive" sleep infinity
+```
+
+### MacOS
+```bash
+caffeinate -i
 ```
 
 ## On the VPS
